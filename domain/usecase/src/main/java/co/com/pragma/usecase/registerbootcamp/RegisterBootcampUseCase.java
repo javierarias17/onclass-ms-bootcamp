@@ -24,6 +24,8 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class RegisterBootcampUseCase {
 
+    private static final int NO_CAPABILITIES_LINKED_YET = 0;
+
     private final BootcampRepository bootcampRepository;
     private final CapabilityGateway capabilityGateway;
 
@@ -58,6 +60,7 @@ public class RegisterBootcampUseCase {
                                 .launchDate(command.launchDate())
                                 .durationInWeeks(command.durationInWeeks())
                                 .status(BootcampStatusEnum.PENDING)
+                                .capabilityCount(NO_CAPABILITIES_LINKED_YET)
                                 .build())
                         : Mono.error(new CapabilitiesNotFoundException(
                                 FunctionalMessageConstants.BUSINESS_VALIDATION_FAILED,
@@ -73,6 +76,7 @@ public class RegisterBootcampUseCase {
                                 .launchDate(savedBootcamp.getLaunchDate().value())
                                 .durationInWeeks(savedBootcamp.getDurationInWeeks().value())
                                 .status(BootcampStatusEnum.COMPLETE)
+                                .capabilityCount(command.capabilityIds().size())
                                 .build()))));
     }
 

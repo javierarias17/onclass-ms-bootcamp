@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS onclass_bootcamp.bootcamps (
     launch_date       DATE NOT NULL,
     duration_in_weeks INTEGER NOT NULL,
     status            VARCHAR(10) NOT NULL DEFAULT 'PENDING',
+    capability_count  INTEGER NOT NULL DEFAULT 0,
     version           BIGINT NOT NULL DEFAULT 0
 );
 

@@ -14,6 +14,7 @@ public interface BootcampEntityMapper {
     @Mapping(source = "launchDate.value", target = "launchDate")
     @Mapping(source = "durationInWeeks.value", target = "durationInWeeks")
     @Mapping(source = "status", target = "status")
+    @Mapping(source = "capabilityCount", target = "capabilityCount")
     BootcampEntity toEntity(Bootcamp bootcamp);
 
     default Bootcamp toDomain(BootcampEntity entity) {
@@ -25,6 +26,7 @@ public interface BootcampEntityMapper {
                         .launchDate(entity.getLaunchDate())
                         .durationInWeeks(entity.getDurationInWeeks())
                         .status(BootcampStatusEnum.valueOf(entity.getStatus()))
+                        .capabilityCount(entity.getCapabilityCount())
                         .version(entity.getVersion())
                         .build();
     }

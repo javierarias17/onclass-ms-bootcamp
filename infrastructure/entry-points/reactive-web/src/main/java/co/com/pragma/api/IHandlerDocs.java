@@ -1,8 +1,14 @@
 package co.com.pragma.api;
 
+import co.com.pragma.api.constants.QueryParamConstants;
 import co.com.pragma.api.dto.BootcampInDto;
 import co.com.pragma.api.dto.BootcampOutDto;
+import co.com.pragma.api.dto.BootcampPageOutDto;
+import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
+import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -118,4 +124,81 @@ public interface IHandlerDocs {
                                     """)))
     })
     Mono<ServerResponse> listenRegisterBootcamp(ServerRequest serverRequest);
+
+    @Operation(
+            operationId = "listenListBootcamps",
+            summary = "List bootcamps",
+            description = "Returns a paginated list of bootcamps, each with its associated capabilities "
+                    + "(id and name only) and the distinct set of technologies covered across all of them "
+                    + "(id and name only, deduplicated).",
+            tags = { "Bootcamps" },
+            parameters = {
+                    @Parameter(name = QueryParamConstants.PAGE, in = ParameterIn.QUERY, required = false,
+                            schema = @Schema(type = "integer", defaultValue = "0")),
+                    @Parameter(name = QueryParamConstants.SIZE, in = ParameterIn.QUERY, required = false,
+                            schema = @Schema(type = "integer", defaultValue = "10")),
+                    @Parameter(name = QueryParamConstants.SORT_BY, in = ParameterIn.QUERY, required = false,
+                            schema = @Schema(implementation = BootcampSortFieldEnum.class, defaultValue = "NAME")),
+                    @Parameter(name = QueryParamConstants.SORT_DIRECTION, in = ParameterIn.QUERY, required = false,
+                            schema = @Schema(implementation = SortDirectionEnum.class, defaultValue = "ASC"))
+            })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BootcampPageOutDto.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "content": [
+                                        {
+                                          "id": 1,
+                                          "name": "Java Backend Bootcamp",
+                                          "description": "Bootcamp de backend con Java",
+                                          "launchDate": "2026-08-01",
+                                          "durationInWeeks": 12,
+                                          "capabilities": [
+                                            { "id": 1, "name": "Backend" },
+                                            { "id": 2, "name": "DevOps" }
+                                          ],
+                                          "technologies": [
+                                            { "id": 10, "name": "Java" },
+                                            { "id": 11, "name": "Spring" },
+                                            { "id": 12, "name": "Docker" }
+                                          ]
+                                        }
+                                      ],
+                                      "page": 0,
+                                      "size": 10,
+                                      "totalElements": 1,
+                                      "totalPages": 1
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "Business validation failed",
+                                      "errors": [
+                                        {
+                                          "field": "sortBy",
+                                          "message": "Sort field must be one of: NAME, CAPABILITY_COUNT"
+                                        }
+                                      ]
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "An unexpected error occurred. Please contact the administrator."
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "503", description = "Service Unavailable",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "The service is temporarily unavailable. Please try again shortly."
+                                    }
+                                    """)))
+    })
+    Mono<ServerResponse> listenListBootcamps(ServerRequest serverRequest);
 }

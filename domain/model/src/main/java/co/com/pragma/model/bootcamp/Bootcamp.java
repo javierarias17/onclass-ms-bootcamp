@@ -18,6 +18,7 @@ public class Bootcamp {
     private final BootcampLaunchDate launchDate;
     private final BootcampDurationInWeeks durationInWeeks;
     private final BootcampStatusEnum status;
+    private final Integer capabilityCount;
     private final Long version;
 
     private Bootcamp(Builder builder) {
@@ -27,6 +28,7 @@ public class Bootcamp {
         this.launchDate = new BootcampLaunchDate(builder.launchDate);
         this.durationInWeeks = new BootcampDurationInWeeks(builder.durationInWeeks);
         this.status = builder.status;
+        this.capabilityCount = builder.capabilityCount;
         this.version = builder.version;
     }
 
@@ -58,6 +60,10 @@ public class Bootcamp {
         return status;
     }
 
+    public Integer getCapabilityCount() {
+        return capabilityCount;
+    }
+
     public Long getVersion() {
         return version;
     }
@@ -70,6 +76,7 @@ public class Bootcamp {
         private LocalDate launchDate;
         private Integer durationInWeeks;
         private BootcampStatusEnum status;
+        private Integer capabilityCount;
         private Long version;
 
         public Builder id(Long id) {
@@ -104,6 +111,11 @@ public class Bootcamp {
 
         public Builder status(BootcampStatusEnum status) {
             this.status = status;
+            return this;
+        }
+
+        public Builder capabilityCount(Integer capabilityCount) {
+            this.capabilityCount = capabilityCount;
             return this;
         }
 

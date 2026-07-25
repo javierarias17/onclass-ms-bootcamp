@@ -1,7 +1,12 @@
 package co.com.pragma.api;
 
+import co.com.pragma.api.constants.QueryParamConstants;
 import co.com.pragma.api.dto.BootcampInDto;
 import co.com.pragma.api.mapper.BootcampDtoMapper;
+import co.com.pragma.model.bootcamp.query.BootcampListQuery;
+import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
+import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
+import co.com.pragma.usecase.listbootcamps.ListBootcampsUseCase;
 import co.com.pragma.usecase.registerbootcamp.RegisterBootcampUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +19,11 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class Handler implements IHandlerDocs {
 
+    private static final String DEFAULT_PAGE = "0";
+    private static final String DEFAULT_SIZE = "10";
+
     private final RegisterBootcampUseCase registerBootcampUseCase;
+    private final ListBootcampsUseCase listBootcampsUseCase;
     private final BootcampDtoMapper bootcampDtoMapper;
 
     @Override
@@ -25,5 +34,18 @@ public class Handler implements IHandlerDocs {
                 .flatMap(command -> registerBootcampUseCase.execute(command)
                         .map(bootcamp -> bootcampDtoMapper.toBootcampOutDto(bootcamp, command.capabilityIds())))
                 .flatMap(response -> ServerResponse.status(HttpStatus.CREATED).bodyValue(response));
+    }
+
+    @Override
+    public Mono<ServerResponse> listenListBootcamps(ServerRequest serverRequest) {
+        BootcampListQuery query = new BootcampListQuery(
+                serverRequest.queryParam(QueryParamConstants.PAGE).orElse(DEFAULT_PAGE),
+                serverRequest.queryParam(QueryParamConstants.SIZE).orElse(DEFAULT_SIZE),
+                serverRequest.queryParam(QueryParamConstants.SORT_BY).orElse(BootcampSortFieldEnum.NAME.name()),
+                serverRequest.queryParam(QueryParamConstants.SORT_DIRECTION).orElse(SortDirectionEnum.ASC.name()));
+
+        return listBootcampsUseCase.execute(query)
+                .map(bootcampDtoMapper::toBootcampPageOutDto)
+                .flatMap(response -> ServerResponse.status(HttpStatus.OK).bodyValue(response));
     }
 }

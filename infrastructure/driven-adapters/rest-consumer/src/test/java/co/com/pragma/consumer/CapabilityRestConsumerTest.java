@@ -94,6 +94,52 @@ class CapabilityRestConsumerTest {
     }
 
     @Test
+    void When_FindingCapabilitiesByBootcampIds_Expect_MapGroupedByBootcampWithNestedTechnologies() {
+        // Arrange
+        mockBackEnd.enqueue(new MockResponse()
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setResponseCode(HttpStatus.OK.value())
+                .setBody("""
+                        {
+                          "bootcamps": [
+                            {
+                              "bootcampId": %d,
+                              "capabilities": [
+                                {
+                                  "id": %d,
+                                  "name": "Backend",
+                                  "technologies": [
+                                    { "id": 100, "name": "Java" }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                        """.formatted(BOOTCAMP_ID, CAPABILITY_ID_1)));
+
+        // Act & Assert
+        StepVerifier.create(capabilityRestConsumer.findCapabilitiesByBootcampIds(List.of(BOOTCAMP_ID)))
+                .expectNextMatches(result -> result.get(BOOTCAMP_ID).size() == 1
+                        && result.get(BOOTCAMP_ID).get(0).technologies().size() == 1)
+                .verifyComplete();
+    }
+
+    @Test
+    void When_FindingCapabilitiesByBootcampIdsFails_Expect_CapabilityServiceUnavailableException() {
+        // Arrange
+        mockBackEnd.enqueue(new MockResponse()
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setResponseCode(HttpStatus.BAD_REQUEST.value())
+                .setBody("{\"message\": \"Business validation failed\"}"));
+
+        // Act & Assert
+        StepVerifier.create(capabilityRestConsumer.findCapabilitiesByBootcampIds(List.of(BOOTCAMP_ID)))
+                .expectError(CapabilityServiceUnavailableException.class)
+                .verify(Duration.ofSeconds(2));
+    }
+
+    @Test
     void When_ServerRespondsWithTransientServerError_Expect_RetryUntilSuccess() {
         // Arrange: primer intento falla con 500, segundo intento (reintento) responde bien
         mockBackEnd.enqueue(new MockResponse().setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value()));
