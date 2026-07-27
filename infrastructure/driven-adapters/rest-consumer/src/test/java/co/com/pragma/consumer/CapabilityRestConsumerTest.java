@@ -196,4 +196,28 @@ class CapabilityRestConsumerTest {
                 .expectError(CapabilityServiceUnavailableException.class)
                 .verify(Duration.ofSeconds(2));
     }
+
+    @Test
+    void When_DeletingOrphanedCapabilitiesForBootcamp_Expect_CompletionWithoutError() {
+        // Arrange
+        mockBackEnd.enqueue(new MockResponse().setResponseCode(HttpStatus.NO_CONTENT.value()));
+
+        // Act & Assert
+        StepVerifier.create(capabilityRestConsumer.deleteOrphanedCapabilitiesForBootcamp(BOOTCAMP_ID))
+                .verifyComplete();
+    }
+
+    @Test
+    void When_DeletingOrphanedCapabilitiesForBootcampFails_Expect_CapabilityServiceUnavailableException() {
+        // Arrange
+        mockBackEnd.enqueue(new MockResponse()
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setResponseCode(HttpStatus.BAD_REQUEST.value())
+                .setBody("{\"message\": \"Business validation failed\"}"));
+
+        // Act & Assert
+        StepVerifier.create(capabilityRestConsumer.deleteOrphanedCapabilitiesForBootcamp(BOOTCAMP_ID))
+                .expectError(CapabilityServiceUnavailableException.class)
+                .verify(Duration.ofSeconds(2));
+    }
 }

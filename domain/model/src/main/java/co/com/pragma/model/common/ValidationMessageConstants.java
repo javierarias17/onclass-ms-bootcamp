@@ -21,6 +21,8 @@ public final class ValidationMessageConstants {
     public static final String MSG_DURATION_IN_WEEKS_MUST_BE_POSITIVE = "Bootcamp duration in weeks must be greater than zero";
     public static final String MSG_CAPABILITY_IDS_SIZE_RANGE = "Bootcamp must have between %d and %d capabilities";
     public static final String MSG_CAPABILITY_IDS_DUPLICATED = "Bootcamp capability ids must not contain duplicates";
+    public static final String MSG_ID_REQUIRED = "Bootcamp id is required";
+    public static final String MSG_ID_MUST_BE_NUMERIC = "Bootcamp id must be numeric";
     public static final String MSG_PAGE_MUST_BE_NUMERIC = "Page must be numeric";
     public static final String MSG_PAGE_OUT_OF_RANGE = "Page must be zero or greater";
     public static final String MSG_SIZE_MUST_BE_NUMERIC = "Size must be numeric";

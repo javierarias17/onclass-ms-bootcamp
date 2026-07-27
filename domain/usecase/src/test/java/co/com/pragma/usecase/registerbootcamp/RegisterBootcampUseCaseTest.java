@@ -62,20 +62,20 @@ class RegisterBootcampUseCaseTest {
         // Arrange
         BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
                 VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
-        Bootcamp pendingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.PENDING);
-        Bootcamp completeBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.COMPLETE);
+        Bootcamp creatingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATING);
+        Bootcamp createdBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATED);
 
         when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.empty());
         when(capabilityGateway.checkCapabilitiesExistence(VALID_CAPABILITY_IDS)).thenReturn(Mono.just(List.of()));
         when(bootcampRepository.save(any(Bootcamp.class)))
-                .thenReturn(Mono.just(pendingBootcamp), Mono.just(completeBootcamp));
+                .thenReturn(Mono.just(creatingBootcamp), Mono.just(createdBootcamp));
         when(capabilityGateway.linkBootcampCapabilities(BOOTCAMP_ID, VALID_CAPABILITY_IDS)).thenReturn(Mono.empty());
 
         // Act & Assert
         StepVerifier.create(useCase.execute(command))
                 .expectNextMatches(result -> result.getId().equals(BOOTCAMP_ID)
                         && result.getName().value().equals(VALID_NAME)
-                        && result.getStatus() == BootcampStatusEnum.COMPLETE)
+                        && result.getStatus() == BootcampStatusEnum.CREATED)
                 .verifyComplete();
 
         // registro nuevo: no hay vínculos previos que limpiar
@@ -101,13 +101,13 @@ class RegisterBootcampUseCaseTest {
     }
 
     @Test
-    void Expect_BootcampAlreadyExistsException_When_ExistingBootcampIsComplete() {
+    void Expect_BootcampAlreadyExistsException_When_ExistingBootcampIsCreated() {
         // Arrange
         BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
                 VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
-        Bootcamp completeBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.COMPLETE);
+        Bootcamp createdBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATED);
 
-        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.just(completeBootcamp));
+        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.just(createdBootcamp));
 
         // Act & Assert
         StepVerifier.create(useCase.execute(command))
@@ -119,24 +119,42 @@ class RegisterBootcampUseCaseTest {
     }
 
     @Test
-    void Expect_BootcampToBeResumedAndCompleted_When_ExistingBootcampIsPending() {
-        // Arrange: un intento anterior murió a mitad de camino y dejó el bootcamp en PENDING
+    void Expect_BootcampAlreadyExistsException_When_ExistingBootcampIsDeleting() {
+        // Arrange: el bootcamp está siendo eliminado (DELETING); no debe "resucitarse" vía registro
         BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
                 VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
-        Bootcamp pendingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.PENDING);
-        Bootcamp completeBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.COMPLETE);
+        Bootcamp deletingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.DELETING);
 
-        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.just(pendingBootcamp));
+        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.just(deletingBootcamp));
+
+        // Act & Assert
+        StepVerifier.create(useCase.execute(command))
+                .expectError(BootcampAlreadyExistsException.class)
+                .verify();
+
+        verify(capabilityGateway, never()).checkCapabilitiesExistence(anyList());
+        verify(bootcampRepository, never()).save(any());
+    }
+
+    @Test
+    void Expect_BootcampToBeResumedAndCreated_When_ExistingBootcampIsCreating() {
+        // Arrange: un intento anterior murió a mitad de camino y dejó el bootcamp en CREATING
+        BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
+                VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
+        Bootcamp creatingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATING);
+        Bootcamp createdBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATED);
+
+        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.just(creatingBootcamp));
         when(capabilityGateway.checkCapabilitiesExistence(VALID_CAPABILITY_IDS)).thenReturn(Mono.just(List.of()));
         when(bootcampRepository.save(argThat(b -> b != null && BOOTCAMP_ID.equals(b.getId()))))
-                .thenReturn(Mono.just(pendingBootcamp), Mono.just(completeBootcamp));
+                .thenReturn(Mono.just(creatingBootcamp), Mono.just(createdBootcamp));
         when(capabilityGateway.deleteBootcampCapabilities(BOOTCAMP_ID)).thenReturn(Mono.empty());
         when(capabilityGateway.linkBootcampCapabilities(BOOTCAMP_ID, VALID_CAPABILITY_IDS)).thenReturn(Mono.empty());
 
         // Act & Assert
         StepVerifier.create(useCase.execute(command))
                 .expectNextMatches(result -> result.getId().equals(BOOTCAMP_ID)
-                        && result.getStatus() == BootcampStatusEnum.COMPLETE)
+                        && result.getStatus() == BootcampStatusEnum.CREATED)
                 .verifyComplete();
 
         // el mismo id se reutiliza y se limpian los vínculos parciales antes de volver a enlazar
@@ -145,16 +163,16 @@ class RegisterBootcampUseCaseTest {
     }
 
     @Test
-    void Expect_BootcampToRemainPending_When_LinkingCapabilitiesFails() {
+    void Expect_BootcampToRemainCreating_When_LinkingCapabilitiesFails() {
         // Arrange
         BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
                 VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
-        Bootcamp pendingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.PENDING);
+        Bootcamp creatingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATING);
         RuntimeException linkFailure = new RuntimeException("capability service unavailable");
 
         when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.empty());
         when(capabilityGateway.checkCapabilitiesExistence(VALID_CAPABILITY_IDS)).thenReturn(Mono.just(List.of()));
-        when(bootcampRepository.save(any(Bootcamp.class))).thenReturn(Mono.just(pendingBootcamp));
+        when(bootcampRepository.save(any(Bootcamp.class))).thenReturn(Mono.just(creatingBootcamp));
         when(capabilityGateway.linkBootcampCapabilities(BOOTCAMP_ID, VALID_CAPABILITY_IDS)).thenReturn(Mono.error(linkFailure));
 
         // Act & Assert
@@ -162,7 +180,7 @@ class RegisterBootcampUseCaseTest {
                 .expectErrorMatches(error -> error == linkFailure)
                 .verify();
 
-        // no se marca COMPLETE: el bootcamp queda en PENDING para que un reintento lo repare
+        // no se marca CREATED: el bootcamp queda en CREATING para que un reintento lo repare
         verify(bootcampRepository, times(1)).save(any(Bootcamp.class));
     }
 

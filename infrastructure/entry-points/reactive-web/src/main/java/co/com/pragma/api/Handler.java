@@ -1,11 +1,13 @@
 package co.com.pragma.api;
 
+import co.com.pragma.api.constants.PathVariableConstants;
 import co.com.pragma.api.constants.QueryParamConstants;
 import co.com.pragma.api.dto.BootcampInDto;
 import co.com.pragma.api.mapper.BootcampDtoMapper;
 import co.com.pragma.model.bootcamp.query.BootcampListQuery;
 import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
 import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
+import co.com.pragma.usecase.deletebootcamp.DeleteBootcampUseCase;
 import co.com.pragma.usecase.listbootcamps.ListBootcampsUseCase;
 import co.com.pragma.usecase.registerbootcamp.RegisterBootcampUseCase;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class Handler implements IHandlerDocs {
 
     private final RegisterBootcampUseCase registerBootcampUseCase;
     private final ListBootcampsUseCase listBootcampsUseCase;
+    private final DeleteBootcampUseCase deleteBootcampUseCase;
     private final BootcampDtoMapper bootcampDtoMapper;
 
     @Override
@@ -47,5 +50,12 @@ public class Handler implements IHandlerDocs {
         return listBootcampsUseCase.execute(query)
                 .map(bootcampDtoMapper::toBootcampPageOutDto)
                 .flatMap(response -> ServerResponse.status(HttpStatus.OK).bodyValue(response));
+    }
+
+    @Override
+    public Mono<ServerResponse> listenDeleteBootcamp(ServerRequest serverRequest) {
+        return Mono.just(serverRequest.pathVariable(PathVariableConstants.ID))
+                .flatMap(deleteBootcampUseCase::execute)
+                .then(ServerResponse.noContent().build());
     }
 }

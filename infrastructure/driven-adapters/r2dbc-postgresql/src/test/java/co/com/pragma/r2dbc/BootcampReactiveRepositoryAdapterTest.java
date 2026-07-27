@@ -12,11 +12,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
+import java.util.List;
 
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,11 +41,14 @@ class BootcampReactiveRepositoryAdapterTest {
     @Mock
     private BootcampEntityMapper bootcampEntityMapper;
 
+    @Mock
+    private R2dbcEntityTemplate template;
+
     private BootcampReactiveRepositoryAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        adapter = new BootcampReactiveRepositoryAdapter(repository, mapper, bootcampEntityMapper);
+        adapter = new BootcampReactiveRepositoryAdapter(repository, mapper, bootcampEntityMapper, template);
     }
 
     @Test
@@ -53,14 +60,14 @@ class BootcampReactiveRepositoryAdapterTest {
                 .description(VALID_DESCRIPTION)
                 .launchDate(VALID_LAUNCH_DATE)
                 .durationInWeeks(VALID_DURATION_IN_WEEKS)
-                .status(BootcampStatusEnum.PENDING)
+                .status(BootcampStatusEnum.CREATING)
                 .build();
         BootcampEntity entity = BootcampEntity.builder()
                 .name(VALID_NAME)
                 .description(VALID_DESCRIPTION)
                 .launchDate(VALID_LAUNCH_DATE)
                 .durationInWeeks(VALID_DURATION_IN_WEEKS)
-                .status(BootcampStatusEnum.PENDING.name())
+                .status(BootcampStatusEnum.CREATING.name())
                 .build();
 
         when(bootcampEntityMapper.toEntity(bootcamp)).thenReturn(entity);
@@ -82,7 +89,7 @@ class BootcampReactiveRepositoryAdapterTest {
                 .description(VALID_DESCRIPTION)
                 .launchDate(VALID_LAUNCH_DATE)
                 .durationInWeeks(VALID_DURATION_IN_WEEKS)
-                .status(BootcampStatusEnum.COMPLETE.name())
+                .status(BootcampStatusEnum.CREATED.name())
                 .build();
         Bootcamp domain = Bootcamp.builder()
                 .id(BOOTCAMP_ID)
@@ -90,7 +97,7 @@ class BootcampReactiveRepositoryAdapterTest {
                 .description(VALID_DESCRIPTION)
                 .launchDate(VALID_LAUNCH_DATE)
                 .durationInWeeks(VALID_DURATION_IN_WEEKS)
-                .status(BootcampStatusEnum.COMPLETE)
+                .status(BootcampStatusEnum.CREATED)
                 .build();
 
         when(repository.findByNameIgnoreCase(VALID_NAME)).thenReturn(Mono.just(entity));
@@ -99,6 +106,77 @@ class BootcampReactiveRepositoryAdapterTest {
         // Act & Assert
         StepVerifier.create(adapter.findByName(VALID_NAME))
                 .expectNextMatches(result -> result.getId().equals(BOOTCAMP_ID))
+                .verifyComplete();
+    }
+
+    @Test
+    void When_UpdateStatus_Expect_RepositorySaveToBeCalledAndMappedToDomain() {
+        // Arrange
+        Bootcamp bootcamp = Bootcamp.builder()
+                .id(BOOTCAMP_ID)
+                .version(0L)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.DELETING)
+                .build();
+        BootcampEntity entity = BootcampEntity.builder()
+                .id(BOOTCAMP_ID)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.DELETING.name())
+                .build();
+
+        when(bootcampEntityMapper.toEntity(bootcamp)).thenReturn(entity);
+        when(repository.save(entity)).thenReturn(Mono.just(entity));
+        when(bootcampEntityMapper.toDomain(entity)).thenReturn(bootcamp);
+
+        // Act & Assert
+        StepVerifier.create(adapter.updateStatus(bootcamp))
+                .expectNextMatches(result -> result.getStatus() == BootcampStatusEnum.DELETING)
+                .verifyComplete();
+    }
+
+    @Test
+    void When_DeleteById_Expect_RepositoryDeleteByIdToBeCalled() {
+        // Arrange
+        when(repository.deleteById(BOOTCAMP_ID)).thenReturn(Mono.empty());
+
+        // Act & Assert
+        StepVerifier.create(adapter.deleteById(BOOTCAMP_ID))
+                .verifyComplete();
+        verify(repository).deleteById(BOOTCAMP_ID);
+    }
+
+    @Test
+    void When_FindAllPendingDeletion_Expect_RepositoryToBeCalledAndMappedToDomain() {
+        // Arrange
+        BootcampEntity entity = BootcampEntity.builder()
+                .id(BOOTCAMP_ID)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.DELETING.name())
+                .build();
+        Bootcamp domain = Bootcamp.builder()
+                .id(BOOTCAMP_ID)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.DELETING)
+                .build();
+
+        when(repository.findAllByStatusDeleting()).thenReturn(Flux.just(entity));
+        when(bootcampEntityMapper.toDomain(entity)).thenReturn(domain);
+
+        // Act & Assert
+        StepVerifier.create(adapter.findAllPendingDeletion())
+                .expectNextMatches(result -> result.equals(List.of(domain)))
                 .verifyComplete();
     }
 }

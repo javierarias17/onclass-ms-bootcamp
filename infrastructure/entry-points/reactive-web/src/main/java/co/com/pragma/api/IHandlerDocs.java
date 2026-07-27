@@ -1,5 +1,6 @@
 package co.com.pragma.api;
 
+import co.com.pragma.api.constants.PathVariableConstants;
 import co.com.pragma.api.constants.QueryParamConstants;
 import co.com.pragma.api.dto.BootcampInDto;
 import co.com.pragma.api.dto.BootcampOutDto;
@@ -201,4 +202,60 @@ public interface IHandlerDocs {
                                     """)))
     })
     Mono<ServerResponse> listenListBootcamps(ServerRequest serverRequest);
+
+    @Operation(
+            operationId = "listenDeleteBootcamp",
+            summary = "Delete a bootcamp",
+            description = "Deletes a bootcamp and, cascading through capability-ms and technology-ms, any "
+                    + "capability or technology left orphaned by its removal. The bootcamp is first marked as "
+                    + "DELETING so that, if the cascade fails partway through, a background retry job can "
+                    + "resume and complete it without requiring administrator intervention. "
+                    + "Idempotent: calling it again once the bootcamp is already gone is a no-op.",
+            tags = { "Bootcamps" },
+            parameters = @Parameter(name = PathVariableConstants.ID, in = ParameterIn.PATH, required = true,
+                    schema = @Schema(type = "integer", format = "int64")))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "No Content"),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "Business validation failed",
+                                      "errors": [
+                                        {
+                                          "field": "id",
+                                          "message": "Bootcamp id must be numeric"
+                                        }
+                                      ]
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "Business validation failed",
+                                      "errors": [
+                                        {
+                                          "field": "id",
+                                          "message": "Bootcamp not found"
+                                        }
+                                      ]
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "An unexpected error occurred. Please contact the administrator."
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "503", description = "Service Unavailable",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "The service is temporarily unavailable. Please try again shortly."
+                                    }
+                                    """)))
+    })
+    Mono<ServerResponse> listenDeleteBootcamp(ServerRequest serverRequest);
 }

@@ -82,7 +82,22 @@ public class BootcampReactiveRepositoryAdapter extends ReactiveAdapterOperations
 
     @Override
     public Mono<Long> count() {
-        Query completeOnly = Query.query(Criteria.where(STATUS_COLUMN).is(BootcampReactiveRepository.COMPLETE_STATUS));
-        return template.count(completeOnly, BootcampEntity.class);
+        Query createdOnly = Query.query(Criteria.where(STATUS_COLUMN).is(BootcampReactiveRepository.CREATED_STATUS));
+        return template.count(createdOnly, BootcampEntity.class);
+    }
+
+    @Override
+    public Mono<Bootcamp> updateStatus(Bootcamp bootcamp) {
+        return super.save(bootcamp);
+    }
+
+    @Override
+    public Mono<Void> deleteById(Long id) {
+        return repository.deleteById(id);
+    }
+
+    @Override
+    public Mono<List<Bootcamp>> findAllPendingDeletion() {
+        return repository.findAllByStatusDeleting().map(this::toEntity).collectList();
     }
 }

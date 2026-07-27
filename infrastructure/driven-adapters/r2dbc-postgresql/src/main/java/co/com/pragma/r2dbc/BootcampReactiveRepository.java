@@ -12,23 +12,27 @@ public interface BootcampReactiveRepository extends
         ReactiveCrudRepository<BootcampEntity, Long>,
         ReactiveQueryByExampleExecutor<BootcampEntity> {
 
-    String COMPLETE_STATUS = "COMPLETE";
+    String CREATED_STATUS = "CREATED";
+    String DELETING_STATUS = "DELETING";
 
     Mono<BootcampEntity> findByNameIgnoreCase(String name);
 
-    @Query("SELECT * FROM bootcamps WHERE status = '" + COMPLETE_STATUS
+    @Query("SELECT * FROM bootcamps WHERE status = '" + DELETING_STATUS + "'")
+    Flux<BootcampEntity> findAllByStatusDeleting();
+
+    @Query("SELECT * FROM bootcamps WHERE status = '" + CREATED_STATUS
             + "' ORDER BY LOWER(name) ASC LIMIT :size OFFSET :offset")
     Flux<BootcampEntity> findPageByNameAsc(@Param("size") int size, @Param("offset") long offset);
 
-    @Query("SELECT * FROM bootcamps WHERE status = '" + COMPLETE_STATUS
+    @Query("SELECT * FROM bootcamps WHERE status = '" + CREATED_STATUS
             + "' ORDER BY LOWER(name) DESC LIMIT :size OFFSET :offset")
     Flux<BootcampEntity> findPageByNameDesc(@Param("size") int size, @Param("offset") long offset);
 
-    @Query("SELECT * FROM bootcamps WHERE status = '" + COMPLETE_STATUS
+    @Query("SELECT * FROM bootcamps WHERE status = '" + CREATED_STATUS
             + "' ORDER BY capability_count ASC LIMIT :size OFFSET :offset")
     Flux<BootcampEntity> findPageByCapabilityCountAsc(@Param("size") int size, @Param("offset") long offset);
 
-    @Query("SELECT * FROM bootcamps WHERE status = '" + COMPLETE_STATUS
+    @Query("SELECT * FROM bootcamps WHERE status = '" + CREATED_STATUS
             + "' ORDER BY capability_count DESC LIMIT :size OFFSET :offset")
     Flux<BootcampEntity> findPageByCapabilityCountDesc(@Param("size") int size, @Param("offset") long offset);
 }

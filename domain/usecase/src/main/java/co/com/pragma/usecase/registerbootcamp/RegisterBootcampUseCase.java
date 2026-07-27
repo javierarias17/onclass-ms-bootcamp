@@ -41,12 +41,12 @@ public class RegisterBootcampUseCase {
     }
 
     private Mono<Bootcamp> resumeOrReject(Bootcamp existingBootcamp, BootcampCreateCommand command) {
-        if (existingBootcamp.getStatus() == BootcampStatusEnum.COMPLETE)
-            return Mono.error(new BootcampAlreadyExistsException(
-                    FunctionalMessageConstants.BUSINESS_VALIDATION_FAILED,
-                    Map.of(FieldConstants.NAME, FunctionalMessageConstants.BOOTCAMP_ALREADY_EXISTS)));
+        if (existingBootcamp.getStatus() == BootcampStatusEnum.CREATING)
+            return registerAndLink(existingBootcamp.getId(), existingBootcamp.getVersion(), command);
 
-        return registerAndLink(existingBootcamp.getId(), existingBootcamp.getVersion(), command);
+        return Mono.error(new BootcampAlreadyExistsException(
+                FunctionalMessageConstants.BUSINESS_VALIDATION_FAILED,
+                Map.of(FieldConstants.NAME, FunctionalMessageConstants.BOOTCAMP_ALREADY_EXISTS)));
     }
 
     private Mono<Bootcamp> registerAndLink(Long bootcampId, Long version, BootcampCreateCommand command) {
@@ -59,7 +59,7 @@ public class RegisterBootcampUseCase {
                                 .description(command.description())
                                 .launchDate(command.launchDate())
                                 .durationInWeeks(command.durationInWeeks())
-                                .status(BootcampStatusEnum.PENDING)
+                                .status(BootcampStatusEnum.CREATING)
                                 .capabilityCount(NO_CAPABILITIES_LINKED_YET)
                                 .build())
                         : Mono.error(new CapabilitiesNotFoundException(
@@ -67,7 +67,8 @@ public class RegisterBootcampUseCase {
                                 Map.of(FieldConstants.CAPABILITY_IDS,
                                         String.format(FunctionalMessageConstants.CAPABILITIES_NOT_FOUND, missingIds)))))
                 .flatMap(savedBootcamp -> deleteStaleLinksIfResuming(bootcampId, savedBootcamp.getId())
-                        .then(Mono.defer(() -> capabilityGateway.linkBootcampCapabilities(savedBootcamp.getId(), command.capabilityIds())))
+                        .then(Mono.defer(() -> capabilityGateway.linkBootcampCapabilities(savedBootcamp.getId(),
+                                command.capabilityIds())))
                         .then(Mono.defer(() -> bootcampRepository.save(Bootcamp.builder()
                                 .id(savedBootcamp.getId())
                                 .version(savedBootcamp.getVersion())
@@ -75,7 +76,7 @@ public class RegisterBootcampUseCase {
                                 .description(savedBootcamp.getDescription().value())
                                 .launchDate(savedBootcamp.getLaunchDate().value())
                                 .durationInWeeks(savedBootcamp.getDurationInWeeks().value())
-                                .status(BootcampStatusEnum.COMPLETE)
+                                .status(BootcampStatusEnum.CREATED)
                                 .capabilityCount(command.capabilityIds().size())
                                 .build()))));
     }

@@ -16,4 +16,12 @@ public interface BootcampRepository {
     Mono<List<Bootcamp>> findPage(int page, int size, BootcampSortFieldEnum sortField, SortDirectionEnum direction);
 
     Mono<Long> count();
+
+    Mono<Bootcamp> findById(Long id);
+
+    Mono<Bootcamp> updateStatus(Bootcamp bootcamp);
+
+    Mono<Void> deleteById(Long id);
+
+    Mono<List<Bootcamp>> findAllPendingDeletion();
 }

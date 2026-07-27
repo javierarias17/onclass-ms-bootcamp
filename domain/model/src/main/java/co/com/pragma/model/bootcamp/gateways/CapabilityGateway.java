@@ -15,4 +15,6 @@ public interface CapabilityGateway {
     Mono<Void> deleteBootcampCapabilities(Long bootcampId);
 
     Mono<Map<Long, List<CapabilitySummary>>> findCapabilitiesByBootcampIds(List<Long> bootcampIds);
+
+    Mono<Void> deleteOrphanedCapabilitiesForBootcamp(Long bootcampId);
 }

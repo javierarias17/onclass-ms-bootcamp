@@ -32,6 +32,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
     private static final String BOOTCAMP_CAPABILITIES_PATH = "/api/v1/bootcamp-capabilities";
     private static final String DELETE_BOOTCAMP_CAPABILITIES_PATH = BOOTCAMP_CAPABILITIES_PATH + "/{bootcampId}";
     private static final String BOOTCAMP_CAPABILITIES_BY_BOOTCAMP_IDS_PATH = BOOTCAMP_CAPABILITIES_PATH + "/by-bootcamp-ids";
+    private static final String DELETE_ORPHANED_CAPABILITIES_PATH = BOOTCAMP_CAPABILITIES_PATH + "/{bootcampId}/cascade";
 
     private static final String SERVICE_CALL_FAILED_MESSAGE = "Unable to reach capability service at %s";
     private static final int MAX_RETRY_ATTEMPTS = 2;
@@ -90,6 +91,18 @@ public class CapabilityRestConsumer implements CapabilityGateway {
                 .retryWhen(transientErrorRetry())
                 .onErrorMap(error -> new CapabilityServiceUnavailableException(
                         buildServiceCallFailedMessage(BOOTCAMP_CAPABILITIES_BY_BOOTCAMP_IDS_PATH), error));
+    }
+
+    @Override
+    @CircuitBreaker(name = "deleteOrphanedCapabilitiesForBootcamp")
+    public Mono<Void> deleteOrphanedCapabilitiesForBootcamp(Long bootcampId) {
+        return client.delete()
+                .uri(DELETE_ORPHANED_CAPABILITIES_PATH, bootcampId)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .retryWhen(transientErrorRetry())
+                .onErrorMap(error -> new CapabilityServiceUnavailableException(
+                        buildServiceCallFailedMessage(DELETE_ORPHANED_CAPABILITIES_PATH), error));
     }
 
     private static String buildServiceCallFailedMessage(String path) {

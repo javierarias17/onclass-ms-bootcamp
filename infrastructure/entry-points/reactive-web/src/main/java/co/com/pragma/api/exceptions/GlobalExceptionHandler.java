@@ -1,6 +1,7 @@
 package co.com.pragma.api.exceptions;
 
 import co.com.pragma.model.bootcamp.exceptions.BootcampAlreadyExistsException;
+import co.com.pragma.model.bootcamp.exceptions.BootcampNotFoundException;
 import co.com.pragma.model.bootcamp.exceptions.CapabilityServiceUnavailableException;
 import co.com.pragma.model.exceptions.FunctionalException;
 import co.com.pragma.model.exceptions.TechnicalException;
@@ -45,6 +46,7 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
 
     static {
         HTTP_STATUS_CODES.put(BootcampAlreadyExistsException.class, HttpStatus.CONFLICT);
+        HTTP_STATUS_CODES.put(BootcampNotFoundException.class, HttpStatus.NOT_FOUND);
     }
 
     public GlobalExceptionHandler(ErrorAttributes errorAttributes,
