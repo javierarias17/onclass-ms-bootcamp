@@ -30,8 +30,11 @@ public class RouterRest {
                     RequestMethod.DELETE }, beanClass = Handler.class, beanMethod = "listenDeleteBootcamp")
     })
     public RouterFunction<ServerResponse> bootcampRouterFunction(Handler handler) {
+        //HU-04
         return route(POST(BOOTCAMPS_PATH), handler::listenRegisterBootcamp)
+                //HU-05
                 .andRoute(GET(BOOTCAMPS_PATH), handler::listenListBootcamps)
+                //HU-06
                 .andRoute(DELETE(BOOTCAMP_BY_ID_PATH), handler::listenDeleteBootcamp);
     }
 }

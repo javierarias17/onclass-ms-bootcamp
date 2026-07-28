@@ -32,7 +32,7 @@ public class Handler implements IHandlerDocs {
     @Override
     public Mono<ServerResponse> listenRegisterBootcamp(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(BootcampInDto.class)
-                .defaultIfEmpty(new BootcampInDto(null, null, null, null, null))
+                .defaultIfEmpty(BootcampInDto.builder().build())
                 .map(bootcampDtoMapper::toBootcampCreateCommand)
                 .flatMap(command -> registerBootcampUseCase.execute(command)
                         .map(bootcamp -> bootcampDtoMapper.toBootcampOutDto(bootcamp, command.capabilityIds())))

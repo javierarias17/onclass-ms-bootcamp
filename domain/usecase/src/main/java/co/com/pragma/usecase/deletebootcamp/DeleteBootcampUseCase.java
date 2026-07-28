@@ -37,7 +37,7 @@ public class DeleteBootcampUseCase {
                         : markDeleting(bootcamp).flatMap(this::resumeCascade));
     }
 
-    // público para que el job de reintento reutilice esta misma orquestación
+    // El job de reintento reutiliza esta misma orquestación
     public Mono<Void> resumeCascade(Bootcamp bootcamp) {
         return capabilityGateway.deleteOrphanedCapabilitiesForBootcamp(bootcamp.getId())
                 .then(Mono.defer(() -> bootcampRepository.deleteById(bootcamp.getId())));
