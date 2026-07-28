@@ -5,6 +5,8 @@ import co.com.pragma.api.constants.QueryParamConstants;
 import co.com.pragma.api.dto.BootcampInDto;
 import co.com.pragma.api.dto.BootcampOutDto;
 import co.com.pragma.api.dto.BootcampPageOutDto;
+import co.com.pragma.api.dto.BootcampSchedulesInDto;
+import co.com.pragma.api.dto.BootcampSchedulesOutDto;
 import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
 import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
 import io.swagger.v3.oas.annotations.Operation;
@@ -258,4 +260,57 @@ public interface IHandlerDocs {
                                     """)))
     })
     Mono<ServerResponse> listenDeleteBootcamp(ServerRequest serverRequest);
+
+    @Operation(
+            operationId = "listenFindBootcampSchedules",
+            summary = "Find bootcamp schedules",
+            description = "Given a list of bootcamp ids, returns the launch date and duration in weeks of each "
+                    + "one that corresponds to an existing, fully created bootcamp (ids that don't match are "
+                    + "silently omitted from the response). Used by other microservices (e.g. person-ms for "
+                    + "HU-07 enrollment) to validate that a bootcampId exists and to check for schedule overlaps "
+                    + "against bootcamps the person is already enrolled in.",
+            tags = { "Bootcamps" },
+            requestBody = @RequestBody(
+                    description = "Input data",
+                    required = true,
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BootcampSchedulesInDto.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "bootcampIds": [1, 99]
+                                    }
+                                    """))))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BootcampSchedulesOutDto.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "schedules": [
+                                        { "id": 1, "launchDate": "2026-08-01", "durationInWeeks": 12 }
+                                      ]
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "400", description = "Bad Request",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "Business validation failed",
+                                      "errors": [
+                                        {
+                                          "field": "bootcampIds",
+                                          "message": "Bootcamp ids list is required and must not be empty"
+                                        }
+                                      ]
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "An unexpected error occurred. Please contact the administrator."
+                                    }
+                                    """)))
+    })
+    Mono<ServerResponse> listenFindBootcampSchedules(ServerRequest serverRequest);
 }

@@ -100,4 +100,10 @@ public class BootcampReactiveRepositoryAdapter extends ReactiveAdapterOperations
     public Mono<List<Bootcamp>> findAllPendingDeletion() {
         return repository.findAllByStatusDeleting().map(this::toEntity).collectList();
     }
+
+    @Override
+    public Flux<Bootcamp> findByIds(List<Long> bootcampIds) {
+        return repository.findByIdIn(bootcampIds)
+                .map(this::toEntity);
+    }
 }

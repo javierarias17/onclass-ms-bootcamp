@@ -4,6 +4,8 @@ import co.com.pragma.api.dto.BootcampInDto;
 import co.com.pragma.api.dto.BootcampListItemOutDto;
 import co.com.pragma.api.dto.BootcampOutDto;
 import co.com.pragma.api.dto.BootcampPageOutDto;
+import co.com.pragma.api.dto.BootcampScheduleOutDto;
+import co.com.pragma.api.dto.BootcampSchedulesOutDto;
 import co.com.pragma.api.dto.CapabilitySummaryOutDto;
 import co.com.pragma.api.dto.TechnologySummaryOutDto;
 import co.com.pragma.model.bootcamp.Bootcamp;
@@ -45,5 +47,13 @@ public interface BootcampDtoMapper {
         return new BootcampListItemOutDto(item.bootcamp().getId(), item.bootcamp().getName().value(),
                 item.bootcamp().getDescription().value(), item.bootcamp().getLaunchDate().value(),
                 item.bootcamp().getDurationInWeeks().value(), capabilities, technologies);
+    }
+
+    default BootcampSchedulesOutDto toBootcampSchedulesOutDto(List<Bootcamp> bootcamps) {
+        List<BootcampScheduleOutDto> schedules = bootcamps.stream()
+                .map(bootcamp -> new BootcampScheduleOutDto(bootcamp.getId(), bootcamp.getLaunchDate().value(),
+                        bootcamp.getDurationInWeeks().value()))
+                .toList();
+        return new BootcampSchedulesOutDto(schedules);
     }
 }

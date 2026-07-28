@@ -3,6 +3,7 @@ package co.com.pragma.model.bootcamp.gateways;
 import co.com.pragma.model.bootcamp.Bootcamp;
 import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
 import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -24,4 +25,6 @@ public interface BootcampRepository {
     Mono<Void> deleteById(Long id);
 
     Mono<List<Bootcamp>> findAllPendingDeletion();
+
+    Flux<Bootcamp> findByIds(List<Long> bootcampIds);
 }

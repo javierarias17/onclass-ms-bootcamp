@@ -11,6 +11,7 @@ public final class FieldConstants {
     public static final String LAUNCH_DATE = "launchDate";
     public static final String DURATION_IN_WEEKS = "durationInWeeks";
     public static final String CAPABILITY_IDS = "capabilityIds";
+    public static final String BOOTCAMP_IDS = "bootcampIds";
     public static final String ID = "id";
     public static final String PAGE = "page";
     public static final String SIZE = "size";

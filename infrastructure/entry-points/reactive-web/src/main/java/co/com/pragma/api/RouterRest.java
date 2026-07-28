@@ -19,6 +19,7 @@ public class RouterRest {
 
     private static final String BOOTCAMPS_PATH = "/api/v1/bootcamps";
     private static final String BOOTCAMP_BY_ID_PATH = BOOTCAMPS_PATH + "/{" + PathVariableConstants.ID + "}";
+    private static final String BOOTCAMPS_SCHEDULES_PATH = BOOTCAMPS_PATH + "/schedules";
 
     @Bean
     @RouterOperations({
@@ -27,7 +28,9 @@ public class RouterRest {
             @RouterOperation(path = BOOTCAMPS_PATH, method = {
                     RequestMethod.GET }, beanClass = Handler.class, beanMethod = "listenListBootcamps"),
             @RouterOperation(path = BOOTCAMP_BY_ID_PATH, method = {
-                    RequestMethod.DELETE }, beanClass = Handler.class, beanMethod = "listenDeleteBootcamp")
+                    RequestMethod.DELETE }, beanClass = Handler.class, beanMethod = "listenDeleteBootcamp"),
+            @RouterOperation(path = BOOTCAMPS_SCHEDULES_PATH, method = {
+                    RequestMethod.POST }, beanClass = Handler.class, beanMethod = "listenFindBootcampSchedules")
     })
     public RouterFunction<ServerResponse> bootcampRouterFunction(Handler handler) {
         //HU-04
@@ -35,6 +38,8 @@ public class RouterRest {
                 //HU-05
                 .andRoute(GET(BOOTCAMPS_PATH), handler::listenListBootcamps)
                 //HU-06
-                .andRoute(DELETE(BOOTCAMP_BY_ID_PATH), handler::listenDeleteBootcamp);
+                .andRoute(DELETE(BOOTCAMP_BY_ID_PATH), handler::listenDeleteBootcamp)
+                //HU-07
+                .andRoute(POST(BOOTCAMPS_SCHEDULES_PATH), handler::listenFindBootcampSchedules);
     }
 }

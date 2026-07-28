@@ -8,6 +8,8 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 public interface BootcampReactiveRepository extends
         ReactiveCrudRepository<BootcampEntity, Long>,
         ReactiveQueryByExampleExecutor<BootcampEntity> {
@@ -35,4 +37,7 @@ public interface BootcampReactiveRepository extends
     @Query("SELECT * FROM bootcamps WHERE status = '" + CREATED_STATUS
             + "' ORDER BY capability_count DESC LIMIT :size OFFSET :offset")
     Flux<BootcampEntity> findPageByCapabilityCountDesc(@Param("size") int size, @Param("offset") long offset);
+
+    @Query("SELECT * FROM bootcamps WHERE id IN (:bootcampIds) AND status = '" + CREATED_STATUS + "'")
+    Flux<BootcampEntity> findByIdIn(@Param("bootcampIds") List<Long> bootcampIds);
 }

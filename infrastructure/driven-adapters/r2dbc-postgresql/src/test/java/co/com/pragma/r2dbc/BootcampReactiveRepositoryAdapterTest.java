@@ -179,4 +179,33 @@ class BootcampReactiveRepositoryAdapterTest {
                 .expectNextMatches(result -> result.equals(List.of(domain)))
                 .verifyComplete();
     }
+
+    @Test
+    void When_FindByIds_Expect_RepositoryToBeCalledAndMappedToDomain() {
+        // Arrange
+        BootcampEntity entity = BootcampEntity.builder()
+                .id(BOOTCAMP_ID)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.CREATED.name())
+                .build();
+        Bootcamp domain = Bootcamp.builder()
+                .id(BOOTCAMP_ID)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.CREATED)
+                .build();
+
+        when(repository.findByIdIn(List.of(BOOTCAMP_ID))).thenReturn(Flux.just(entity));
+        when(bootcampEntityMapper.toDomain(entity)).thenReturn(domain);
+
+        // Act & Assert
+        StepVerifier.create(adapter.findByIds(List.of(BOOTCAMP_ID)))
+                .expectNextMatches(result -> result.equals(domain))
+                .verifyComplete();
+    }
 }
