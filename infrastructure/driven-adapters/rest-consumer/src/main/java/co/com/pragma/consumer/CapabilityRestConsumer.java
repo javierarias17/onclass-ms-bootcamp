@@ -6,7 +6,7 @@ import co.com.pragma.consumer.dto.CapabilitiesByBootcampInDto;
 import co.com.pragma.consumer.dto.CapabilitiesByBootcampOutDto;
 import co.com.pragma.consumer.dto.CapabilityExistenceInDto;
 import co.com.pragma.consumer.dto.CapabilityExistenceOutDto;
-import co.com.pragma.model.bootcamp.exceptions.CapabilityServiceUnavailableException;
+import co.com.pragma.model.bootcamp.exceptions.ServiceUnavailableException;
 import co.com.pragma.model.bootcamp.gateways.CapabilityGateway;
 import co.com.pragma.consumer.config.RestConsumerConfig;
 import co.com.pragma.model.bootcamp.query.CapabilitySummary;
@@ -53,7 +53,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
                 .bodyToMono(CapabilityExistenceOutDto.class)
                 .map(CapabilityExistenceOutDto::missingIds)
                 .retryWhen(transientErrorRetry())
-                .onErrorMap(error -> new CapabilityServiceUnavailableException(
+                .onErrorMap(error -> new ServiceUnavailableException(
                         buildServiceCallFailedMessage(EXISTENCE_CHECK_PATH), error));
     }
 
@@ -66,7 +66,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
                 .retrieve()
                 .bodyToMono(Void.class)
                 .retryWhen(transientErrorRetry())
-                .onErrorMap(error -> new CapabilityServiceUnavailableException(
+                .onErrorMap(error -> new ServiceUnavailableException(
                         buildServiceCallFailedMessage(BOOTCAMP_CAPABILITIES_PATH), error));
     }
 
@@ -78,7 +78,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
                 .retrieve()
                 .bodyToMono(Void.class)
                 .retryWhen(transientErrorRetry())
-                .onErrorMap(error -> new CapabilityServiceUnavailableException(
+                .onErrorMap(error -> new ServiceUnavailableException(
                         buildServiceCallFailedMessage(DELETE_BOOTCAMP_CAPABILITIES_PATH), error));
     }
 
@@ -92,7 +92,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
                 .bodyToMono(CapabilitiesByBootcampOutDto.class)
                 .map(this::toCapabilitiesByBootcampMap)
                 .retryWhen(transientErrorRetry())
-                .onErrorMap(error -> new CapabilityServiceUnavailableException(
+                .onErrorMap(error -> new ServiceUnavailableException(
                         buildServiceCallFailedMessage(BOOTCAMP_CAPABILITIES_BY_BOOTCAMP_IDS_PATH), error));
     }
 
@@ -104,7 +104,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
                 .retrieve()
                 .bodyToMono(Void.class)
                 .retryWhen(transientErrorRetry())
-                .onErrorMap(error -> new CapabilityServiceUnavailableException(
+                .onErrorMap(error -> new ServiceUnavailableException(
                         buildServiceCallFailedMessage(DELETE_ORPHANED_CAPABILITIES_PATH), error));
     }
 

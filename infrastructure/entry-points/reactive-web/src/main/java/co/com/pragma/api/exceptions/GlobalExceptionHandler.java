@@ -2,7 +2,7 @@ package co.com.pragma.api.exceptions;
 
 import co.com.pragma.model.bootcamp.exceptions.BootcampAlreadyExistsException;
 import co.com.pragma.model.bootcamp.exceptions.BootcampNotFoundException;
-import co.com.pragma.model.bootcamp.exceptions.CapabilityServiceUnavailableException;
+import co.com.pragma.model.bootcamp.exceptions.ServiceUnavailableException;
 import co.com.pragma.model.exceptions.FunctionalException;
 import co.com.pragma.model.exceptions.TechnicalException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -39,7 +39,7 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
     private static final String TECHNICAL_ERROR_MESSAGE_LOG = "Technical error: {}";
     private static final String UNEXPECTED_ERROR_MESSAGE_LOG = "Unexpected error";
     private static final String CIRCUIT_BREAKER_OPEN_MESSAGE_LOG = "Circuit breaker open: {}";
-    private static final String CAPABILITY_SERVICE_UNAVAILABLE_MESSAGE_LOG = "Capability service unavailable: {}";
+    private static final String SERVICE_UNAVAILABLE_MESSAGE_LOG = "Downstream service unavailable: {}";
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final Map<Class<?>, HttpStatus> HTTP_STATUS_CODES = new HashMap<>();
@@ -72,9 +72,10 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
             logger.error(CIRCUIT_BREAKER_OPEN_MESSAGE_LOG, throwable.getMessage());
             status = HttpStatus.SERVICE_UNAVAILABLE;
             responseBody.put(MESSAGE, SERVICE_UNAVAILABLE_MESSAGE);
-        } else if (throwable instanceof CapabilityServiceUnavailableException) {
-            // se loguea el throwable completo (no solo el mensaje) para conservar la causa técnica original
-            logger.error(CAPABILITY_SERVICE_UNAVAILABLE_MESSAGE_LOG, throwable.getMessage(), throwable);
+        } else if (throwable instanceof ServiceUnavailableException) {
+            // se loguea el throwable completo (no solo el mensaje) para conservar la causa técnica original;
+            // el mensaje de la excepción ya identifica qué servicio downstream falló
+            logger.error(SERVICE_UNAVAILABLE_MESSAGE_LOG, throwable.getMessage(), throwable);
             status = HttpStatus.SERVICE_UNAVAILABLE;
             responseBody.put(MESSAGE, SERVICE_UNAVAILABLE_MESSAGE);
         } else if (throwable instanceof TechnicalException) {

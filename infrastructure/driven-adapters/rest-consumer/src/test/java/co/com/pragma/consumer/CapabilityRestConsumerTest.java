@@ -1,6 +1,6 @@
 package co.com.pragma.consumer;
 
-import co.com.pragma.model.bootcamp.exceptions.CapabilityServiceUnavailableException;
+import co.com.pragma.model.bootcamp.exceptions.ServiceUnavailableException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
@@ -126,7 +126,7 @@ class CapabilityRestConsumerTest {
     }
 
     @Test
-    void When_FindingCapabilitiesByBootcampIdsFails_Expect_CapabilityServiceUnavailableException() {
+    void When_FindingCapabilitiesByBootcampIdsFails_Expect_ServiceUnavailableException() {
         // Arrange
         mockBackEnd.enqueue(new MockResponse()
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -135,7 +135,7 @@ class CapabilityRestConsumerTest {
 
         // Act & Assert
         StepVerifier.create(capabilityRestConsumer.findCapabilitiesByBootcampIds(List.of(BOOTCAMP_ID)))
-                .expectError(CapabilityServiceUnavailableException.class)
+                .expectError(ServiceUnavailableException.class)
                 .verify(Duration.ofSeconds(2));
     }
 
@@ -155,7 +155,7 @@ class CapabilityRestConsumerTest {
     }
 
     @Test
-    void When_ServerRespondsWithBusinessError_Expect_NoRetryAndCapabilityServiceUnavailableException() {
+    void When_ServerRespondsWithBusinessError_Expect_NoRetryAndServiceUnavailableException() {
         // Arrange: solo se encola UNA respuesta 400; si el consumer reintentara,
         // la segunda llamada se quedaría esperando una respuesta que no existe y el test fallaría por timeout.
         mockBackEnd.enqueue(new MockResponse()
@@ -165,12 +165,12 @@ class CapabilityRestConsumerTest {
 
         // Act & Assert
         StepVerifier.create(capabilityRestConsumer.checkCapabilitiesExistence(CAPABILITY_IDS))
-                .expectError(CapabilityServiceUnavailableException.class)
+                .expectError(ServiceUnavailableException.class)
                 .verify(Duration.ofSeconds(2));
     }
 
     @Test
-    void When_LinkingBootcampCapabilitiesFails_Expect_CapabilityServiceUnavailableException() {
+    void When_LinkingBootcampCapabilitiesFails_Expect_ServiceUnavailableException() {
         // Arrange
         mockBackEnd.enqueue(new MockResponse()
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -179,12 +179,12 @@ class CapabilityRestConsumerTest {
 
         // Act & Assert
         StepVerifier.create(capabilityRestConsumer.linkBootcampCapabilities(BOOTCAMP_ID, CAPABILITY_IDS))
-                .expectError(CapabilityServiceUnavailableException.class)
+                .expectError(ServiceUnavailableException.class)
                 .verify(Duration.ofSeconds(2));
     }
 
     @Test
-    void When_DeletingBootcampCapabilitiesFails_Expect_CapabilityServiceUnavailableException() {
+    void When_DeletingBootcampCapabilitiesFails_Expect_ServiceUnavailableException() {
         // Arrange
         mockBackEnd.enqueue(new MockResponse()
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -193,7 +193,7 @@ class CapabilityRestConsumerTest {
 
         // Act & Assert
         StepVerifier.create(capabilityRestConsumer.deleteBootcampCapabilities(BOOTCAMP_ID))
-                .expectError(CapabilityServiceUnavailableException.class)
+                .expectError(ServiceUnavailableException.class)
                 .verify(Duration.ofSeconds(2));
     }
 
@@ -208,7 +208,7 @@ class CapabilityRestConsumerTest {
     }
 
     @Test
-    void When_DeletingOrphanedCapabilitiesForBootcampFails_Expect_CapabilityServiceUnavailableException() {
+    void When_DeletingOrphanedCapabilitiesForBootcampFails_Expect_ServiceUnavailableException() {
         // Arrange
         mockBackEnd.enqueue(new MockResponse()
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -217,7 +217,7 @@ class CapabilityRestConsumerTest {
 
         // Act & Assert
         StepVerifier.create(capabilityRestConsumer.deleteOrphanedCapabilitiesForBootcamp(BOOTCAMP_ID))
-                .expectError(CapabilityServiceUnavailableException.class)
+                .expectError(ServiceUnavailableException.class)
                 .verify(Duration.ofSeconds(2));
     }
 }

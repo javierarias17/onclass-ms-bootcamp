@@ -10,6 +10,7 @@ import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
 import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
 import co.com.pragma.usecase.deletebootcamp.DeleteBootcampUseCase;
 import co.com.pragma.usecase.findbootcampschedules.FindBootcampSchedulesUseCase;
+import co.com.pragma.usecase.findtopbootcamp.FindTopBootcampUseCase;
 import co.com.pragma.usecase.listbootcamps.ListBootcampsUseCase;
 import co.com.pragma.usecase.registerbootcamp.RegisterBootcampUseCase;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class Handler implements IHandlerDocs {
     private final ListBootcampsUseCase listBootcampsUseCase;
     private final DeleteBootcampUseCase deleteBootcampUseCase;
     private final FindBootcampSchedulesUseCase findBootcampSchedulesUseCase;
+    private final FindTopBootcampUseCase findTopBootcampUseCase;
     private final BootcampDtoMapper bootcampDtoMapper;
 
     @Override
@@ -69,5 +71,13 @@ public class Handler implements IHandlerDocs {
                 .flatMap(dto -> findBootcampSchedulesUseCase.execute(dto.bootcampIds()))
                 .map(bootcampDtoMapper::toBootcampSchedulesOutDto)
                 .flatMap(response -> ServerResponse.status(HttpStatus.OK).bodyValue(response));
+    }
+
+    @Override
+    public Mono<ServerResponse> listenFindTopBootcamp(ServerRequest serverRequest) {
+        return findTopBootcampUseCase.execute()
+                .map(bootcampDtoMapper::toTopBootcampOutDto)
+                .flatMap(response -> ServerResponse.status(HttpStatus.OK).bodyValue(response))
+                .switchIfEmpty(ServerResponse.noContent().build());
     }
 }

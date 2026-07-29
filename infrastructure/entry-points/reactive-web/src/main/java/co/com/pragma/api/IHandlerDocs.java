@@ -7,6 +7,7 @@ import co.com.pragma.api.dto.BootcampOutDto;
 import co.com.pragma.api.dto.BootcampPageOutDto;
 import co.com.pragma.api.dto.BootcampSchedulesInDto;
 import co.com.pragma.api.dto.BootcampSchedulesOutDto;
+import co.com.pragma.api.dto.TopBootcampOutDto;
 import co.com.pragma.model.bootcamp.query.BootcampSortFieldEnum;
 import co.com.pragma.model.bootcamp.query.SortDirectionEnum;
 import io.swagger.v3.oas.annotations.Operation;
@@ -313,4 +314,55 @@ public interface IHandlerDocs {
                                     """)))
     })
     Mono<ServerResponse> listenFindBootcampSchedules(ServerRequest serverRequest);
+
+    @Operation(
+            operationId = "listenFindTopBootcamp",
+            summary = "Find the bootcamp with the most enrolled persons",
+            description = "Returns the full detail of the bootcamp with the highest number of enrolled persons: "
+                    + "its own data, every capability and technology associated with it, and the name and email "
+                    + "of each enrolled person. Ties are broken by the lowest bootcamp id. If no bootcamp has any "
+                    + "enrollments yet, responds 204 with no body (never 404 — that status is reserved for "
+                    + "the resource path itself not existing).",
+            tags = { "Bootcamps" })
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OK",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TopBootcampOutDto.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "id": 1,
+                                      "name": "Java Backend Bootcamp",
+                                      "description": "Bootcamp de backend con Java",
+                                      "launchDate": "2026-08-01",
+                                      "durationInWeeks": 12,
+                                      "capabilities": [
+                                        { "id": 1, "name": "Backend" }
+                                      ],
+                                      "technologies": [
+                                        { "id": 10, "name": "Java" }
+                                      ],
+                                      "enrolledPersonCount": 2,
+                                      "persons": [
+                                        { "name": "Ada Lovelace", "email": "ada@mail.com" },
+                                        { "name": "Alan Turing", "email": "alan@mail.com" }
+                                      ]
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "204", description = "No Content. No bootcamp has any enrollments yet."),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "An unexpected error occurred. Please contact the administrator."
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "503", description = "Service Unavailable",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "message": "The service is temporarily unavailable. Please try again shortly."
+                                    }
+                                    """)))
+    })
+    Mono<ServerResponse> listenFindTopBootcamp(ServerRequest serverRequest);
 }

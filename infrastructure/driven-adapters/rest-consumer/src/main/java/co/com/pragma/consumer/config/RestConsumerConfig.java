@@ -20,16 +20,20 @@ public class RestConsumerConfig {
 
     public static final String CAPABILITY_WEB_CLIENT = "capabilityWebClient";
     public static final String REPORT_WEB_CLIENT = "reportWebClient";
+    public static final String PERSON_WEB_CLIENT = "personWebClient";
 
     private final String capabilityUrl;
     private final String reportUrl;
+    private final String personUrl;
     private final int timeout;
 
     public RestConsumerConfig(@Value("${adapter.restconsumer.capabilityUrl}") String capabilityUrl,
                               @Value("${adapter.restconsumer.reportUrl}") String reportUrl,
+                              @Value("${adapter.restconsumer.personUrl}") String personUrl,
                               @Value("${adapter.restconsumer.timeout}") int timeout) {
         this.capabilityUrl = capabilityUrl;
         this.reportUrl = reportUrl;
+        this.personUrl = personUrl;
         this.timeout = timeout;
     }
 
@@ -46,6 +50,15 @@ public class RestConsumerConfig {
     public WebClient getReportWebClient() {
         return WebClient.builder()
             .baseUrl(reportUrl)
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .clientConnector(getClientHttpConnector())
+            .build();
+    }
+
+    @Bean(PERSON_WEB_CLIENT)
+    public WebClient getPersonWebClient() {
+        return WebClient.builder()
+            .baseUrl(personUrl)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .clientConnector(getClientHttpConnector())
             .build();

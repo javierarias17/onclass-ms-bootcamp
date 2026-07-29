@@ -7,11 +7,14 @@ import co.com.pragma.api.dto.BootcampPageOutDto;
 import co.com.pragma.api.dto.BootcampScheduleOutDto;
 import co.com.pragma.api.dto.BootcampSchedulesOutDto;
 import co.com.pragma.api.dto.CapabilitySummaryOutDto;
+import co.com.pragma.api.dto.EnrolledPersonOutDto;
 import co.com.pragma.api.dto.TechnologySummaryOutDto;
+import co.com.pragma.api.dto.TopBootcampOutDto;
 import co.com.pragma.model.bootcamp.Bootcamp;
 import co.com.pragma.model.bootcamp.command.BootcampCreateCommand;
 import co.com.pragma.model.bootcamp.query.BootcampListItem;
 import co.com.pragma.model.bootcamp.query.BootcampPage;
+import co.com.pragma.model.bootcamp.query.TopBootcampResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -55,5 +58,21 @@ public interface BootcampDtoMapper {
                         bootcamp.getDurationInWeeks().value()))
                 .toList();
         return new BootcampSchedulesOutDto(schedules);
+    }
+
+    default TopBootcampOutDto toTopBootcampOutDto(TopBootcampResult result) {
+        List<CapabilitySummaryOutDto> capabilities = result.capabilities().stream()
+                .map(capability -> new CapabilitySummaryOutDto(capability.id(), capability.name()))
+                .toList();
+        List<TechnologySummaryOutDto> technologies = result.technologies().stream()
+                .map(technology -> new TechnologySummaryOutDto(technology.id(), technology.name()))
+                .toList();
+        List<EnrolledPersonOutDto> persons = result.persons().stream()
+                .map(person -> new EnrolledPersonOutDto(person.name(), person.email()))
+                .toList();
+        return new TopBootcampOutDto(result.bootcamp().getId(), result.bootcamp().getName().value(),
+                result.bootcamp().getDescription().value(), result.bootcamp().getLaunchDate().value(),
+                result.bootcamp().getDurationInWeeks().value(), capabilities, technologies,
+                result.enrolledPersonCount(), persons);
     }
 }
