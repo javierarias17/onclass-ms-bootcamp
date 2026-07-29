@@ -10,6 +10,10 @@ import co.com.pragma.model.bootcamp.exceptions.BootcampAlreadyExistsException;
 import co.com.pragma.model.bootcamp.exceptions.CapabilitiesNotFoundException;
 import co.com.pragma.model.bootcamp.gateways.BootcampRepository;
 import co.com.pragma.model.bootcamp.gateways.CapabilityGateway;
+import co.com.pragma.model.bootcamp.gateways.ReportGateway;
+import co.com.pragma.model.bootcamp.query.BootcampReportData;
+import co.com.pragma.model.bootcamp.query.CapabilitySummary;
+import co.com.pragma.model.bootcamp.query.TechnologySummary;
 import co.com.pragma.model.bootcamp.valueobject.BootcampCapabilityIds;
 import co.com.pragma.model.bootcamp.valueobject.BootcampDescription;
 import co.com.pragma.model.bootcamp.valueobject.BootcampDurationInWeeks;
@@ -21,13 +25,17 @@ import co.com.pragma.model.exceptions.constant.FunctionalMessageConstants;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 public class RegisterBootcampUseCase {
 
     private static final int NO_CAPABILITIES_LINKED_YET = 0;
+    private static final int NO_ENROLLED_PERSONS_YET = 0;
 
     private final BootcampRepository bootcampRepository;
     private final CapabilityGateway capabilityGateway;
+    private final ReportGateway reportGateway;
 
     public Mono<Bootcamp> execute(BootcampCreateCommand command) {
         Map<String, String> errors = collectFieldFormatErrors(command);
@@ -78,7 +86,32 @@ public class RegisterBootcampUseCase {
                                 .durationInWeeks(savedBootcamp.getDurationInWeeks().value())
                                 .status(BootcampStatusEnum.CREATED)
                                 .capabilityCount(command.capabilityIds().size())
-                                .build()))));
+                                .build())))
+                        .doOnNext(this::triggerReportGeneration));
+    }
+
+    private void triggerReportGeneration(Bootcamp createdBootcamp) {
+        Mono.defer(() -> buildReportMono(createdBootcamp))
+                .subscribe(ignored -> { }, ignoredError -> { });
+    }
+
+    private Mono<Void> buildReportMono(Bootcamp createdBootcamp) {
+        return capabilityGateway.findCapabilitiesByBootcampIds(List.of(createdBootcamp.getId()))
+                .map(capabilitiesByBootcamp -> toReportData(createdBootcamp,
+                        capabilitiesByBootcamp.getOrDefault(createdBootcamp.getId(), List.of())))
+                .flatMap(reportGateway::registerBootcampReport);
+    }
+
+    private BootcampReportData toReportData(Bootcamp bootcamp, List<CapabilitySummary> capabilities) {
+        long technologyCount = capabilities.stream()
+                .flatMap(capability -> capability.technologies().stream())
+                .map(TechnologySummary::id)
+                .distinct()
+                .count();
+
+        return new BootcampReportData(bootcamp.getId(), bootcamp.getName().value(), bootcamp.getDescription().value(),
+                bootcamp.getLaunchDate().value(), bootcamp.getDurationInWeeks().value(), bootcamp.getCapabilityCount(),
+                (int) technologyCount, NO_ENROLLED_PERSONS_YET);
     }
 
     private Mono<Void> deleteStaleLinksIfResuming(Long existingBootcampId, Long savedBootcampId) {

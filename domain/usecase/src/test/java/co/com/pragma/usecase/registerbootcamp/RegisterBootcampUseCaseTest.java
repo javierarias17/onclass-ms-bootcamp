@@ -7,6 +7,10 @@ import co.com.pragma.model.bootcamp.exceptions.BootcampAlreadyExistsException;
 import co.com.pragma.model.bootcamp.exceptions.CapabilitiesNotFoundException;
 import co.com.pragma.model.bootcamp.gateways.BootcampRepository;
 import co.com.pragma.model.bootcamp.gateways.CapabilityGateway;
+import co.com.pragma.model.bootcamp.gateways.ReportGateway;
+import co.com.pragma.model.bootcamp.query.BootcampReportData;
+import co.com.pragma.model.bootcamp.query.CapabilitySummary;
+import co.com.pragma.model.bootcamp.query.TechnologySummary;
 import co.com.pragma.model.bootcamp.valueobject.BootcampCapabilityIds;
 import co.com.pragma.model.exceptions.FieldsValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +23,7 @@ import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,11 +56,14 @@ class RegisterBootcampUseCaseTest {
     @Mock
     private CapabilityGateway capabilityGateway;
 
+    @Mock
+    private ReportGateway reportGateway;
+
     private RegisterBootcampUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new RegisterBootcampUseCase(bootcampRepository, capabilityGateway);
+        useCase = new RegisterBootcampUseCase(bootcampRepository, capabilityGateway, reportGateway);
     }
 
     @Test
@@ -81,6 +90,71 @@ class RegisterBootcampUseCaseTest {
         // registro nuevo: no hay vínculos previos que limpiar
         verify(capabilityGateway, never()).deleteBootcampCapabilities(anyLong());
         verify(bootcampRepository, times(2)).save(any(Bootcamp.class));
+    }
+
+    @Test
+    void Expect_ReportToBeSavedWithCapabilityAndTechnologyCounts_When_BootcampIsRegisteredSuccessfully() {
+        // Arrange
+        BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
+                VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
+        Bootcamp creatingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATING);
+        Bootcamp createdBootcamp = Bootcamp.builder()
+                .id(BOOTCAMP_ID)
+                .name(VALID_NAME)
+                .description(VALID_DESCRIPTION)
+                .launchDate(VALID_LAUNCH_DATE)
+                .durationInWeeks(VALID_DURATION_IN_WEEKS)
+                .status(BootcampStatusEnum.CREATED)
+                .capabilityCount(VALID_CAPABILITY_IDS.size())
+                .build();
+        // capability 1 y 2 comparten la tecnología 101 -> 3 tecnologías distintas en total
+        CapabilitySummary capability1 = new CapabilitySummary(CAPABILITY_ID_1, "Backend",
+                List.of(new TechnologySummary(100L, "Java"), new TechnologySummary(101L, "Spring")));
+        CapabilitySummary capability2 = new CapabilitySummary(CAPABILITY_ID_2, "DevOps",
+                List.of(new TechnologySummary(101L, "Spring"), new TechnologySummary(102L, "Docker")));
+
+        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.empty());
+        when(capabilityGateway.checkCapabilitiesExistence(VALID_CAPABILITY_IDS)).thenReturn(Mono.just(List.of()));
+        when(bootcampRepository.save(any(Bootcamp.class)))
+                .thenReturn(Mono.just(creatingBootcamp), Mono.just(createdBootcamp));
+        when(capabilityGateway.linkBootcampCapabilities(BOOTCAMP_ID, VALID_CAPABILITY_IDS)).thenReturn(Mono.empty());
+        when(capabilityGateway.findCapabilitiesByBootcampIds(List.of(BOOTCAMP_ID)))
+                .thenReturn(Mono.just(Map.of(BOOTCAMP_ID, List.of(capability1, capability2))));
+        when(reportGateway.registerBootcampReport(any(BootcampReportData.class))).thenReturn(Mono.empty());
+
+        // Act & Assert
+        StepVerifier.create(useCase.execute(command))
+                .expectNextCount(1)
+                .verifyComplete();
+
+        // fire-and-forget: se dispara en una suscripción aparte, se le da un margen para completar
+        verify(reportGateway, timeout(500)).registerBootcampReport(argThat(report -> report.bootcampId().equals(BOOTCAMP_ID)
+                && report.name().equals(VALID_NAME)
+                && report.capabilityCount().equals(VALID_CAPABILITY_IDS.size())
+                && report.technologyCount() == 3
+                && report.enrolledPersonCount() == 0));
+    }
+
+    @Test
+    void Expect_RegistrationToSucceed_When_ReportGenerationFails() {
+        // Arrange: report-ms caído/lento no debe afectar el resultado del registro del bootcamp
+        BootcampCreateCommand command = new BootcampCreateCommand(VALID_NAME, VALID_DESCRIPTION,
+                VALID_LAUNCH_DATE, VALID_DURATION_IN_WEEKS, VALID_CAPABILITY_IDS);
+        Bootcamp creatingBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATING);
+        Bootcamp createdBootcamp = bootcampWithStatus(BOOTCAMP_ID, BootcampStatusEnum.CREATED);
+
+        when(bootcampRepository.findByName(VALID_NAME)).thenReturn(Mono.empty());
+        when(capabilityGateway.checkCapabilitiesExistence(VALID_CAPABILITY_IDS)).thenReturn(Mono.just(List.of()));
+        when(bootcampRepository.save(any(Bootcamp.class)))
+                .thenReturn(Mono.just(creatingBootcamp), Mono.just(createdBootcamp));
+        when(capabilityGateway.linkBootcampCapabilities(BOOTCAMP_ID, VALID_CAPABILITY_IDS)).thenReturn(Mono.empty());
+        when(capabilityGateway.findCapabilitiesByBootcampIds(List.of(BOOTCAMP_ID)))
+                .thenReturn(Mono.error(new RuntimeException("report dependency unavailable")));
+
+        // Act & Assert: el registro del bootcamp completa con éxito de todas formas
+        StepVerifier.create(useCase.execute(command))
+                .expectNextMatches(result -> result.getStatus() == BootcampStatusEnum.CREATED)
+                .verifyComplete();
     }
 
     @Test

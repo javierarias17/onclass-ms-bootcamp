@@ -8,10 +8,12 @@ import co.com.pragma.consumer.dto.CapabilityExistenceInDto;
 import co.com.pragma.consumer.dto.CapabilityExistenceOutDto;
 import co.com.pragma.model.bootcamp.exceptions.CapabilityServiceUnavailableException;
 import co.com.pragma.model.bootcamp.gateways.CapabilityGateway;
+import co.com.pragma.consumer.config.RestConsumerConfig;
 import co.com.pragma.model.bootcamp.query.CapabilitySummary;
 import co.com.pragma.model.bootcamp.query.TechnologySummary;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -38,6 +40,7 @@ public class CapabilityRestConsumer implements CapabilityGateway {
     private static final int MAX_RETRY_ATTEMPTS = 2;
     private static final Duration RETRY_BACKOFF = Duration.ofMillis(200);
 
+    @Qualifier(RestConsumerConfig.CAPABILITY_WEB_CLIENT)
     private final WebClient client;
 
     @Override

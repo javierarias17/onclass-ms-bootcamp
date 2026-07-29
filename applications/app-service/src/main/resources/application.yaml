@@ -36,7 +36,8 @@ cors:
 adapter:
   restconsumer:
     timeout: 5000
-    url: "${CAPABILITY_SERVICE_URL}"
+    capabilityUrl: "${CAPABILITY_SERVICE_URL}"
+    reportUrl: "${REPORT_SERVICE_URL}"
 scheduler:
   bootcamp-deletion-retry:
     fixed-delay: 60000
@@ -71,6 +72,15 @@ resilience4j:
         minimumNumberOfCalls: 10
         waitDurationInOpenState: "10s"
       deleteOrphanedCapabilitiesForBootcamp:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
+      registerBootcampReport:
         registerHealthIndicator: true
         failureRateThreshold: 50
         slowCallRateThreshold: 50

@@ -18,20 +18,34 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Configuration
 public class RestConsumerConfig {
 
-    private final String url;
+    public static final String CAPABILITY_WEB_CLIENT = "capabilityWebClient";
+    public static final String REPORT_WEB_CLIENT = "reportWebClient";
 
+    private final String capabilityUrl;
+    private final String reportUrl;
     private final int timeout;
 
-    public RestConsumerConfig(@Value("${adapter.restconsumer.url}") String url,
+    public RestConsumerConfig(@Value("${adapter.restconsumer.capabilityUrl}") String capabilityUrl,
+                              @Value("${adapter.restconsumer.reportUrl}") String reportUrl,
                               @Value("${adapter.restconsumer.timeout}") int timeout) {
-        this.url = url;
+        this.capabilityUrl = capabilityUrl;
+        this.reportUrl = reportUrl;
         this.timeout = timeout;
     }
 
-    @Bean
+    @Bean(CAPABILITY_WEB_CLIENT)
     public WebClient getWebClient() {
         return WebClient.builder()
-            .baseUrl(url)
+            .baseUrl(capabilityUrl)
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .clientConnector(getClientHttpConnector())
+            .build();
+    }
+
+    @Bean(REPORT_WEB_CLIENT)
+    public WebClient getReportWebClient() {
+        return WebClient.builder()
+            .baseUrl(reportUrl)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .clientConnector(getClientHttpConnector())
             .build();
